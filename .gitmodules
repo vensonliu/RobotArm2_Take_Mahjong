@@ -1,0 +1,21 @@
+[submodule "lib/Camera"]
+	path = lib/Camera
+	url = git@140.127.205.188:e8035669/Camera.git
+[submodule "lib/Hsv"]
+	path = lib/Hsv
+	url = git@140.127.205.188:e8035669/Hsv.git
+[submodule "lib/Serial"]
+	path = lib/Serial
+	url = git@140.127.205.188:e8035669/Serial.git
+[submodule "lib/Socket"]
+	path = lib/Socket
+	url = git@140.127.205.188:e8035669/Socket.git
+[submodule "lib/PID"]
+	path = lib/PID
+	url = git@140.127.205.188:e8035669/PID.git
+[submodule "lib/RobotArm"]
+	path = lib/RobotArm
+	url = git@140.127.205.188:b1045152/RobotArm.git
+[submodule "deps/mahjong_model"]
+	path = deps/mahjong_model
+	url = git@140.127.205.188:b1045152/mahjong_model.git
