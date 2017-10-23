@@ -43,8 +43,9 @@ int main(int argc, char** argv)
 	Camera armCam(0, "armCam", FRAME_WIDTH, FRAME_HEIGHT);
 	char inputKey;	
 
-	vector<Mat> result;
+	vector<Mat> results;
 	mahjong_model ann("../assets/model");
+	string result;
 
 	//connect serial
 	if(serial.connect() < 0)
@@ -77,7 +78,9 @@ int main(int argc, char** argv)
 				armHsv_bg.HSV_save("../assets/armHsv_bg.ini");
 				goto SET_ZERO;
 			case 'a':
-				result = SlidingWindow(armCam.image, armHsv_bg);
+				results = SlidingWindow(armCam.image, armHsv_bg);
+				result = ann.mahjong_result(results);
+				cout << result << endl;
 				break;
 		}
 	}

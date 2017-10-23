@@ -6,7 +6,7 @@ set(PROJECT_LANGUAGE CXX)
 set(PROJECT_DEPS lib mahjong_model ${OpenCV_LIBS} pthread ${SERIALPORT_LIB} ${ANN_LIB})
 
 # Compile setting
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++14 -fexceptions")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++14 -fexceptions -fopenmp")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 # Variables
