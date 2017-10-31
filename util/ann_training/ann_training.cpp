@@ -4,6 +4,7 @@
 #include "Camera/Camera.h"
 #include "CMD/CMD.h"
 #include "mahjong_model.h"
+#include "Retinex.hpp"
 
 #include <iostream>
 #include <string>
@@ -13,7 +14,6 @@
 #include <sys/types.h>
 #include <dirent.h>
 
-
 using namespace std;
 using namespace cv;
 
@@ -22,7 +22,7 @@ using namespace cv;
 
 
 vector<Mat> SlidingWindow(Mat& armMat, HSV& hsvParam);
-bool detect(Mat& input, Mat& mat, Point& coor);
+bool detect(Mat& input, Mat& mat, Point& coor, HSV& hsvParam);
 
 int main(int argc, char** argv)
 {
@@ -44,7 +44,7 @@ int main(int argc, char** argv)
 	char inputKey;	
 
 	vector<Mat> results;
-	mahjong_model ann("../assets/model");
+	mahjong_model ann("../assets/model/");
 	string result;
 
 	//connect serial
@@ -65,6 +65,7 @@ int main(int argc, char** argv)
 		cout << "time out when take thing" << endl;
 		goto SET_ZERO;
 	}
+ 	serial.blocking_write("A3T1V170\n");
 
 	while(1)
 	{
@@ -79,8 +80,8 @@ int main(int argc, char** argv)
 				goto SET_ZERO;
 			case 'a':
 				results = SlidingWindow(armCam.image, armHsv_bg);
-				result = ann.mahjong_result(results);
-				cout << result << endl;
+				if(results.size() != 0)
+					result = ann.mahjong_result(results);
 				break;
 		}
 	}
@@ -92,55 +93,67 @@ SET_ZERO:
 
 vector<Mat> SlidingWindow(Mat& armMat, HSV& hsvParam)
 {
-	Mat gray, hsv, captured;
+	Mat captured, Retinex;
 	vector<Mat> output;
 	Point coor;
+	int maxSize;
 
-	cvtColor(armMat, hsv, CV_BGR2HSV);
-	HSV_Filter(hsv, gray, hsvParam);
-
-	if(detect(gray, captured, coor))
+	if(detect(armMat, captured, coor, hsvParam))
 	{
-		imshow("gray", gray);
-		imshow("captured", captured);
-		waitKey(0);
-		for(int y = 0; y < captured.rows - ANN_HEIGHT; y+=10)
+		maxSize = captured.rows < captured.cols? captured.rows: captured.cols;
+		double weight[3]{0.4, 0.3, 0.3};
+		int scale[3]{maxSize / 10, maxSize / 5, maxSize / 2};
+		for(int i = 0; i < 3; i++)
+			if(scale[i] % 2 != 1)
+				scale[i]++;
+		MSRCR(captured, Retinex, scale, weight, 3, 2);
+		
+		imshow("msrcr", Retinex);
+		if(waitKey(0) != ' ')
+			return output;
+
+		for(int y = 0; y < Retinex.rows - ANN_HEIGHT; y+=10)
 		{
-			for(int x = 0; x < captured.cols - ANN_WIDTH; x+=10)
+			for(int x = 0; x < Retinex.cols - ANN_WIDTH; x+=10)
 			{
 				Rect rect(x, y, ANN_WIDTH, ANN_HEIGHT);
-				Mat tmp = captured(rect).clone();
+				Mat tmp = Retinex(rect).clone();
 				output.push_back(tmp);
 			}
 		}
 	}
+	else
+		cout << "no detect" << endl;
 
 	return output;
 }
 
-bool detect(Mat& input, Mat& mat, Point& coor)
+bool detect(Mat& input, Mat& mat, Point& coor, HSV& hsvParam)
 {
 	vector<vector<Point>> contours;
 	Rect box;
 
-	Mat srcTemp = input.clone();
-	
+	Mat gray, hsv;
+
+	cvtColor(input, hsv, CV_BGR2HSV);
+	HSV_Filter(hsv, gray, hsvParam);
+	imshow("gray scale", gray);
 	int area = 0;
 
-	findContours(srcTemp, contours, RETR_LIST, CV_CHAIN_APPROX_NONE);
+	findContours(gray, contours, RETR_LIST, CV_CHAIN_APPROX_NONE);
 	for(unsigned int i = 0; i < contours.size(); i++)
 	{
 		box = boundingRect(contours[i]);
-		if (box.width > 10 && box.height > 10 &&
-			box.width < 300 && box.height < 300)
+		if (box.width > 80 && box.height > 80 &&
+			box.width < 150 && box.height < 150)
 		{
 			if(box.width * box.height > area)
 			{
 				Point center = (box.br() + box.tl()) / 2;
 				if (center.x - box.width/2 > 0 &&
-					center.x + box.width/2 < srcTemp.rows &&
+					center.x + box.width/2 < input.rows &&
 					center.y - box.height/2 > 0 &&
-					center.y + box.height/2 < srcTemp.cols)
+					center.y + box.height/2 < input.cols)
 				{
 					area = box.width * box.height;
 					mat = input(box).clone();

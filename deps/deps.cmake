@@ -27,6 +27,7 @@ include_directories(${ANN_INCLUDE_DIR})
 
 set(DEPS_PATHS
 	${CMAKE_CURRENT_SOURCE_DIR}/deps/mahjong_model
+	${CMAKE_CURRENT_SOURCE_DIR}/deps/Retinex
 	)
 include_directories(${DEPS_PATHS})
 
